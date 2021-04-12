@@ -1,4 +1,5 @@
 const playwright = require('playwright');
+const got = require('got');
 
 const ID = process.env.ID;
 const PASSWORD = process.env.PASSWORD;
@@ -29,12 +30,70 @@ const PASSWORD = process.env.PASSWORD;
     await page.click('#sign-in-with-email-validation [type=submit]');
 
     // enter password
-    await page.type('#password', PASSWORD, {delay: 100});
+    await page.type('#sign-in-password-no-otp', PASSWORD, {delay: 100});
     await page.screenshot({ path: 'img/password.png' });
   }
 
   // login
   await page.click('#sign-in-form [type=submit]');
+
+  // retrive data from recaptcha
+  const recaptcha = await page.waitForSelector('.g-recaptcha');
+  const sitekey = await recaptcha.getAttribute('data-sitekey');
+  const currentUrl = await page.url();
+  console.log(sitekey);
+
+  // 2captcha
+  const APIKEY = process.env.APIKEY;
+  const twoCaptchaURL = `https://2captcha.com/in.php?key=${APIKEY}&method=userrecaptcha&googlekey=${sitekey}&pageurl=${currentUrl}`;
+
+  let requestId;
+  try {
+    const response = await got(twoCaptchaURL);
+    const result = response.body;
+    if (result.startsWith('OK|')) {
+      requestId = result.split('|')[1];
+      console.log(requestId);
+    } else {
+      throw new Error(`Wrong response: ${result}`);
+    }
+  } catch(e) {
+    console.log(e.response.body);
+    await browser.close();
+  }
+
+  const resultUrl = `https://2captcha.com/res.php?key=${APIKEY}&action=get&id=${requestId}`;
+  const getCaptchaResult = () => {
+    return new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          const response = await got(resultUrl);
+          resolve(response.body);
+        } catch(e) {
+          reject(e.response.body);
+        }
+      }, 10000);
+    });
+  };
+
+
+  let answer;
+  let isNotSolved = true;
+  while(isNotSolved) {
+    try {
+      const result = await getCaptchaResult();
+      if (result.startsWith('OK|')) {
+        answer = result.split('|')[1];
+        isNotSolved = false;
+      } else {
+        throw new Error(`Wrong response: ${result}`);
+      }
+      console.log(result);
+    } catch(e) {
+      console.log('error')
+      console.log(e);
+    }
+  }
 
   setTimeout(async () => {
     await page.screenshot({ path: 'img/recaptcha-loaded.png' });
