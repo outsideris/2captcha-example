@@ -1,13 +1,11 @@
 const playwright = require('playwright');
 
-const ID = '';
-const PASSWORD = '';
+const ID = process.env.ID;
+const PASSWORD = process.env.PASSWORD;
 
 (async () => {
   const browser = await playwright.chromium.launch({
     headless: false,
-    // args: ['--disable-web-security', '--disable-features=IsolateOrigins,site-per-process'],
-    // args: ['--disable-features=site-per-process']
   });
   const context = await browser.newContext();
   const page = await context.newPage();
