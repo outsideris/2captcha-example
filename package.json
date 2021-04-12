@@ -15,6 +15,7 @@
   "author": "Outsider <outsideris@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "got": "^11.8.2",
     "playwright": "^1.10.0"
   }
 }
