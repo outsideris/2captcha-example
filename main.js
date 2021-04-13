@@ -32,6 +32,9 @@ const PASSWORD = process.env.PASSWORD;
     // enter password
     await page.type('#sign-in-password-no-otp', PASSWORD, {delay: 100});
     await page.screenshot({ path: 'img/password.png' });
+
+    // login
+    await page.click('#sign-in-with-password-form [type=submit]');
   }
 
   // login
@@ -41,7 +44,6 @@ const PASSWORD = process.env.PASSWORD;
   const recaptcha = await page.waitForSelector('.g-recaptcha');
   const sitekey = await recaptcha.getAttribute('data-sitekey');
   const currentUrl = await page.url();
-  console.log(sitekey);
 
   // 2captcha
   const APIKEY = process.env.APIKEY;
@@ -53,7 +55,7 @@ const PASSWORD = process.env.PASSWORD;
     const result = response.body;
     if (result.startsWith('OK|')) {
       requestId = result.split('|')[1];
-      console.log(requestId);
+      console.log('RequestId: ' + requestId);
     } else {
       throw new Error(`Wrong response: ${result}`);
     }
@@ -94,6 +96,16 @@ const PASSWORD = process.env.PASSWORD;
       console.log(e);
     }
   }
+
+  // enter recaptcha answer
+  await page.$eval('#g-recaptcha-response', el => {
+    el.style.display = 'block';
+  });
+  await page.fill('#g-recaptcha-response', answer, {delay: 30});
+
+  await page.$eval('body', el => {
+    document.querySelector('#sign-in-form').submit();
+  });
 
   setTimeout(async () => {
     await page.screenshot({ path: 'img/recaptcha-loaded.png' });
