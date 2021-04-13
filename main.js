@@ -103,13 +103,12 @@ const PASSWORD = process.env.PASSWORD;
   });
   await page.fill('#g-recaptcha-response', answer, {delay: 30});
 
-  await page.$eval('body', el => {
-    document.querySelector('#sign-in-form').submit();
-  });
+  await page.evaluate((answer) => {
+    handleCaptcha(answer);
+  }, answer);
 
   setTimeout(async () => {
-    await page.screenshot({ path: 'img/recaptcha-loaded.png' });
+    await page.screenshot({ path: 'img/complated.png' });
     await browser.close();
-  }, 8500);
-
+  }, 5000);
 })();
